@@ -9,12 +9,20 @@ Only supports stdio transport for now.
 
 ## Usage
 
-Install the package in development mode:
+First, install the package in development mode:
 
 ```bash
 pip install -e .
 ```
 
-```python
-uv run examples/ollama_example.py /path/to/server.py
+Then run the example:
+
+```bash
+python examples/ollama_example.py /path/to/server.py
+```
+
+Or with uv (which will automatically install dependencies):
+
+```bash
+uv run --with-editable . examples/ollama_example.py /path/to/server.py
 ```
