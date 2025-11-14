@@ -73,7 +73,8 @@ class OllamaMCPClient(AbstractMCPClient):
 
         response = self.client.chat(
             model="llama3.1:8b",
-            messages=messages
+            messages=messages,
+            tools=self.tools,
         )
 
         # Process response and handle tool calls
