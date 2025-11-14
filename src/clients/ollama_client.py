@@ -1,3 +1,5 @@
+from typing import Optional
+from anyio import Path
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -12,7 +14,6 @@ class OllamaMCPClient(AbstractMCPClient):
         self.client = Client()
         self.tools = []
 
-
     async def connect_to_server(self, server_script_path: str):
         """Connect to an MCP server
 
@@ -20,11 +21,22 @@ class OllamaMCPClient(AbstractMCPClient):
             server_script_path: Path to the server script (.py or .js)
         """
         is_python = server_script_path.endswith('.py')
-        is_js = server_script_path.endswith('.js')
-        if not (is_python or is_js):
-            raise ValueError("Server script must be a .py or .js file")
+        if not is_python:
+            raise ValueError("Server script must be a .py file")
 
-        command = "python" if is_python else "node"
+        # CRITICAL FIX: Detect if server has its own UV environment
+        server_dir = Path(server_script_path).parent.parent.parent  # Go up to project root
+        server_venv = server_dir / ".venv" / "bin" / "python"
+        
+        if await server_venv.exists():
+            # Use server's own Python environment
+            command = str(server_venv)
+            print(f"Using server's venv: {command}")
+        else:
+            # Fallback to system Python
+            command = "python"
+            print("Warning: Using system Python, server dependencies may not be available")
+
         server_params = StdioServerParameters(
             command=command,
             args=[server_script_path],
@@ -35,10 +47,10 @@ class OllamaMCPClient(AbstractMCPClient):
         self.stdio, self.write = stdio_transport
         self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
 
-        await self.session.initialize()
+        await self.session.initialize() # type: ignore
 
         # List available tools
-        response = await self.session.list_tools()
+        response = await self.session.list_tools() # type: ignore
         self.tools = [{
                     "type": "function",
                     "function": {
@@ -60,9 +72,8 @@ class OllamaMCPClient(AbstractMCPClient):
         ]
 
         response = self.client.chat(
-            model="llama3.1",
-            messages=messages,
-            tools=self.tools,
+            model="llama3.1:8b",
+            messages=messages
         )
 
         # Process response and handle tool calls
@@ -77,18 +88,18 @@ class OllamaMCPClient(AbstractMCPClient):
                 tool_args = tool.function.arguments
 
                 # Execute tool call
-                result = await self.session.call_tool(tool_name, dict(tool_args))
+                result = await self.session.call_tool(tool_name, dict(tool_args)) # type: ignore
                 tool_results.append({"call": tool_name, "result": result})
                 final_text.append(f"[Calling tool {tool_name} with args {tool_args}]")
 
                 # Continue conversation with tool results
                 messages.append({
                     "role": "user",
-                    "content": result.content[0].text
+                    "content": result.content[0].text # type: ignore
                 })
 
                 response = self.client.chat(
-                    model="llama3.1",
+                    model="llama3.1:8b",
                     messages=messages,
                 )
 
