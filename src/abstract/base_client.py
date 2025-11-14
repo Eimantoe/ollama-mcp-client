@@ -11,12 +11,15 @@ class AbstractMCPClient(ABC):
         self.exit_stack = AsyncExitStack()
 
     @abstractmethod
-    async def connect_to_server(self, server_script_path: str) -> None:
+    async def connect_to_server(self, server_script_path: str, command: Optional[str] = None, args: Optional[list] = None, env: Optional[dict] = None) -> None:
         """
         Connect to an MCP server
 
         Args:
             server_script_path: Path to the server script
+            command: Optional command to run the server (e.g., 'uv', 'python', 'node')
+            args: Optional list of arguments to pass to the command
+            env: Optional environment variables to pass to the server
         """
         pass
 
