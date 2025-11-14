@@ -1,0 +1,85 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "UV: Run Ollama Example",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "examples.ollama_example",
+            "args": [
+                "/Users/eimantas/Git/Kitchen-MCP-server/src/restaurant_mcp/server.py"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "UV: Run Ollama Example (Prompt for Server Path)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "examples.ollama_example",
+            "args": [
+                "${input:serverPath}"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "UV: Run Legacy Client",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/client.py",
+            "args": [
+                "${input:serverPath}"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "UV: Debug Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "UV: Attach to Running Process",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "."
+                }
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "serverPath",
+            "type": "promptString",
+            "description": "Enter the path to the MCP server script",
+            "default": "${workspaceFolder}/path/to/server.py"
+        }
+    ]
+}

@@ -64,7 +64,43 @@ class OllamaMCPClient(AbstractMCPClient):
 
     async def process_query(self, query: str) -> str:
         """Process a query using LLM and available tools"""
+        tool_descriptions = "\n".join([
+            f"- {tool['function']['name']}: {tool['function']['description']}"
+            for tool in self.tools
+        ])
+        
         messages = [
+            {
+                "role": "system",
+                "content": f"""You are a helpful assistant with access to the following tools:
+                {tool_descriptions}
+                IMPORTANT INSTRUCTIONS:
+                - Answer simple questions directly without using tools
+                - Only use tools when you need to retrieve specific data or perform actions that require them
+                - Use tools when the user explicitly asks for information that requires tool access
+                - For greetings, general questions, or conversations, respond naturally without tools
+                - Think carefully before using a tool: "Do I need external data to answer this?"
+                - Please when using tools, don't translate the text that is being received from the tool.
+                - Please use tools without confirmation. Avoid asking the user for permission to use a tool.
+                - When a user asks to place an order, use the place_order tool directly without asking for confirmation.
+
+                Examples of when NOT to use tools:
+                - "Hello" or "How are you?" → Respond directly with greeting
+                - "What can you do?" → Explain your capabilities directly
+                - "Tell me about X" (general knowledge) → Answer from your knowledge
+                - Math calculations or logic → Calculate directly
+                - Opinion questions → Answer directly
+
+                Examples of when TO use tools:
+                - If a person asks for something to recommend from the menu
+                - Queries that require real-time data the tools provide
+                - When the user explicitly asks you to perform an action (create, update, delete, search, etc.)
+                - When the user asks for a menu, use get-menu tool.
+                - When the user asks to place an order, use place_order tool.
+                - Information that cannot be known without accessing external systems
+
+                Be conversational and natural. Don't use tools unless truly necessary."""
+            },
             {
                 "role": "user",
                 "content": query
@@ -78,7 +114,6 @@ class OllamaMCPClient(AbstractMCPClient):
         )
 
         # Process response and handle tool calls
-        tool_results = []
         final_text = []
 
         # Check if LLM wants to use tools
