@@ -81,30 +81,39 @@ class OllamaMCPClient(AbstractMCPClient):
         tool_results = []
         final_text = []
 
-        if response.message.content:
-            final_text.append(response.message.content)
-        elif response.message.tool_calls:
-            for tool in response.message.tool_calls:
-                tool_name = tool.function.name
-                tool_args = tool.function.arguments
+        # Check if LLM wants to use tools
+        if response.message.tool_calls:
+            print(f"🔧 LLM decided to use {len(response.message.tool_calls)} tool(s)")
+            
+            for tool_call in response.message.tool_calls:
+                tool_name = tool_call.function.name
+                tool_args = tool_call.function.arguments
 
-                # Execute tool call
+                print(f"   → Calling {tool_name}({tool_args})")
+
+                # Execute tool call via MCP
                 result = await self.session.call_tool(tool_name, dict(tool_args)) # type: ignore
-                tool_results.append({"call": tool_name, "result": result})
-                final_text.append(f"[Calling tool {tool_name} with args {tool_args}]")
+                final_text.append(f"[Tool: {tool_name}]")
 
-                # Continue conversation with tool results
+                # Add tool result to conversation for LLM to see
                 messages.append({
-                    "role": "user",
+                    "role": "tool",
                     "content": result.content[0].text # type: ignore
                 })
 
-                response = self.client.chat(
-                    model="llama3.1:8b",
-                    messages=messages,
-                )
+            # Get final response from LLM with tool results
+            print("   → Getting LLM's final response with tool results...")
+            response = self.client.chat(
+                model="llama3.1:8b",
+                messages=messages,
+                tools=self.tools,  # Keep tools available for multi-turn
+            )
 
-                final_text.append(response.message.content)
+        # Now handle the text response (either direct or post-tool)
+        if response.message.content:
+            final_text.append(response.message.content)
+        else:
+            final_text.append("[No response generated]")
 
         return "\n".join(final_text)
 
